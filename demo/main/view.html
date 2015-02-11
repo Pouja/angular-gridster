@@ -85,4 +85,26 @@
 			<li gridster-item></li>
         </ul>
     </div>
+
+    <h2>Multi gridster</h2>
+    <p>Group 1</p>
+    <div class="border">
+	    <div gridster="multiGridsterOpts" model="multiItems1">
+	         <ul>
+	            <li gridster-item="item" ng-repeat="item in multiItems1" model="{{item.id}}">
+	            	<p>id: {{item.id}}</p>
+	            </li>
+	        </ul>
+	    </div>
+    </div>
+    <p>Group 2</p>
+    <div class="border">
+	    <div gridster="multiGridsterOpts" model="multiItems2">
+	        <ul>
+	            <li gridster-item="item" ng-repeat="item in multiItems2" model="{{item.id}}">
+	            	<p>id: {{item.id}}</p>
+	            </li>
+	        </ul>
+	    </div>
+    </div>
 </div>
