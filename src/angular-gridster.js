@@ -1226,7 +1226,7 @@
 
 					var dX = diffX,
 						dY = diffY;
-					if (elmX + dX < minLeft) {
+					/*if (elmX + dX < minLeft) {
 						diffX = minLeft - elmX;
 						mOffX = dX - diffX;
 					} else if (elmX + elmW + dX > maxLeft) {
@@ -1240,7 +1240,7 @@
 					} else if (elmY + elmH + dY > maxTop) {
 						diffY = maxTop - elmY - elmH;
 						mOffY = dY - diffY;
-					}
+					}*/
 					elmX += diffX;
 					elmY += diffY;
 

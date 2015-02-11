@@ -172,7 +172,81 @@ angular.module('app')
 		sizeX: 'item.size.x',
 		sizeY: 'item.size.y',
 		row: 'item.position[0]',
-		col: 'item.position[1]'
+		col: 'item.position[1]',
 	};
 
+	$scope.multiGridsterOpts = {
+		mobileModeEnabled: false,
+        rowHeight: '120',
+        defaultSizeX: 1,
+        defaultSizeY: 1,
+        outerMargin: false,
+        pushing: true,
+        swapping: false,
+        isMobile: false,
+        floating: true,
+        columns: 6,
+		draggable: {
+			enabled: true
+		},
+		resizable: {
+			enabled: false,
+		}
+	};
+
+	$scope.onNewGrid = function(parentModel, dataModel) {
+		console.log('I\'m now closer to a new grid!!');
+		console.log(parentModel, dataModel);
+	}
+
+	$scope.multiItems1 = {
+		id: 1,
+		items: []
+	};
+	$scope.multiItems2 = {
+		id: 1,
+		items: []
+	};
+
+	$scope.load = function(){
+		$scope.multiItems1.items = [{
+			id: 1,
+			sizeX: 1,
+			sizeY: 1,
+			row: 0,
+			col: 0
+		}, {
+			id: 2,
+			sizeX: 1,
+			sizeY: 1,
+			row: 1,
+			col: 2
+		}, {
+			id: 3,
+			sizeX: 1,
+			sizeY: 1,
+			row: 1,
+			col: 1
+		}];
+
+		$scope.multiItems2.items = [{
+			id: 4,
+			sizeX: 1,
+			sizeY: 1,
+			row: 0,
+			col: 0
+		}, {
+			id: 5,
+			sizeX: 1,
+			sizeY: 1,
+			row: 1,
+			col: 2
+		}, {
+			id: 6,
+			sizeX: 1,
+			sizeY: 1,
+			row: 1,
+			col: 1
+		}];
+	}
 });
