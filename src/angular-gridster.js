@@ -41,9 +41,43 @@
 		}
 	})
 
+	.factory('GridsterMaster', function() {
+		var gridsters = [];
+
+		return {
+			/**
+			 * @param {Object} gridster A MulitGridster instance.
+			 * Registers a new item to be tracked by the factory.
+			 */
+			register: function(gridster) {
+				gridsters.push(gridster);
+			},
+			/**
+			 * @param {Object} gridster A MulitGridster instance.
+			 * Unregisters an item to be tracked by the factory.
+			 */
+			unregister: function(gridster) {
+				for (var i = 0; i < gridsters.length - 1; i++) {
+					if (gridsters[i] === gridster) {
+						gridsters.splice(i, 1);
+					}
+				}
+			},
+			/**
+			 * @param {Object} item An angular element.
+			 * @return {Object} The closest gridster to the given item.
+			 */
+			findClosestGridster: function(item) {
+				return gridsters.reduce(function(previous, current) {
+					return (previous.distanceToMe(item) < current.distanceToMe(item)) ? previous : current;
+				});
+			}
+		};
+	})
+
+
 	.controller('GridsterCtrl', ['gridsterConfig',
 		function(gridsterConfig) {
-
 			/**
 			 * Create options from gridsterConfig constant
 			 */
@@ -1719,168 +1753,227 @@
 	/**
 	 * GridsterItem directive
 	 */
-	.directive('gridsterItem', ['$parse', 'GridsterDraggable', 'GridsterResizable',
-		function($parse, GridsterDraggable, GridsterResizable) {
-			return {
-				restrict: 'EA',
-				controller: 'GridsterItemCtrl',
-				require: ['^gridster', 'gridsterItem'],
-				link: function(scope, $el, attrs, controllers) {
-					var optionsKey = attrs.gridsterItem,
-						options;
+	.directive('gridsterItem', ['$parse', 'GridsterDraggable', 'GridsterResizable', 'GridsterMaster',
+			function($parse, GridsterDraggable, GridsterResizable, GridsterMaster) {
+				return {
+					restrict: 'EA',
+					controller: 'GridsterItemCtrl',
+					require: ['^gridster', 'gridsterItem'],
+					link: function(scope, $el, attrs, controllers) {
+						var optionsKey = attrs.gridsterItem,
+							options;
 
-					var gridster = controllers[0],
-						item = controllers[1];
+						var gridster = controllers[0],
+							item = controllers[1];
 
-					// bind the item's position properties
-					if (optionsKey) {
-						var $optionsGetter = $parse(optionsKey);
-						options = $optionsGetter(scope) || {};
-						if (!options && $optionsGetter.assign) {
-							options = {
-								row: item.row,
-								col: item.col,
-								sizeX: item.sizeX,
-								sizeY: item.sizeY,
-								minSizeX: 0,
-								minSizeY: 0,
-								maxSizeX: null,
-								maxSizeY: null
-							};
-							$optionsGetter.assign(scope, options);
-						}
-					} else {
-						options = attrs;
-					}
-
-					item.init($el, gridster);
-
-					$el.addClass('gridster-item');
-
-					var aspects = ['minSizeX', 'maxSizeX', 'minSizeY', 'maxSizeY', 'sizeX', 'sizeY', 'row', 'col'],
-						$getters = {};
-
-					var aspectFn = function(aspect) {
-						var key;
-						if (typeof options[aspect] === 'string') {
-							key = options[aspect];
-						} else if (typeof options[aspect.toLowerCase()] === 'string') {
-							key = options[aspect.toLowerCase()];
-						} else if (optionsKey) {
-							key = $parse(optionsKey + '.' + aspect);
+						// bind the item's position properties
+						if (optionsKey) {
+							var $optionsGetter = $parse(optionsKey);
+							options = $optionsGetter(scope) || {};
+							if (!options && $optionsGetter.assign) {
+								options = {
+									row: item.row,
+									col: item.col,
+									sizeX: item.sizeX,
+									sizeY: item.sizeY,
+									minSizeX: 0,
+									minSizeY: 0,
+									maxSizeX: null,
+									maxSizeY: null
+								};
+								$optionsGetter.assign(scope, options);
+							}
 						} else {
-							return;
+							options = attrs;
 						}
-						$getters[aspect] = $parse(key);
 
-						// when the value changes externally, update the internal item object
-						scope.$watch(key, function(newVal) {
-							newVal = parseInt(newVal, 10);
-							if (!isNaN(newVal)) {
-								item[aspect] = newVal;
+						item.init($el, gridster);
+						$el.addClass('gridster-item');
+
+						var aspects = ['minSizeX', 'maxSizeX', 'minSizeY', 'maxSizeY', 'sizeX', 'sizeY', 'row', 'col'],
+							$getters = {};
+
+						var aspectFn = function(aspect) {
+							var key;
+							if (typeof options[aspect] === 'string') {
+								key = options[aspect];
+							} else if (typeof options[aspect.toLowerCase()] === 'string') {
+								key = options[aspect.toLowerCase()];
+							} else if (optionsKey) {
+								key = $parse(optionsKey + '.' + aspect);
+							} else {
+								return;
 							}
-						});
+							$getters[aspect] = $parse(key);
 
-						// initial set
-						var val = $getters[aspect](scope);
-						if (typeof val === 'number') {
-							item[aspect] = val;
-						}
-					};
+							// when the value changes externally, update the internal item object
+							scope.$watch(key, function(newVal) {
+								newVal = parseInt(newVal, 10);
+								if (!isNaN(newVal)) {
+									item[aspect] = newVal;
+								}
+							});
 
-					for (var i = 0, l = aspects.length; i < l; ++i) {
-						aspectFn(aspects[i]);
-					}
-
-					function positionChanged() {
-						// call setPosition so the element and gridster controller are updated
-						item.setPosition(item.row, item.col);
-
-						// when internal item position changes, update externally bound values
-						if ($getters.row && $getters.row.assign) {
-							$getters.row.assign(scope, item.row);
-						}
-						if ($getters.col && $getters.col.assign) {
-							$getters.col.assign(scope, item.col);
-						}
-					}
-					scope.$watch(function() {
-						return item.row + ',' + item.col;
-					}, positionChanged);
-
-					function sizeChanged() {
-						item.setSizeX(item.sizeX);
-						if ($getters.sizeX && $getters.sizeX.assign) {
-							$getters.sizeX.assign(scope, item.sizeX);
-						}
-						item.setSizeY(item.sizeY);
-						if ($getters.sizeY && $getters.sizeY.assign) {
-							$getters.sizeY.assign(scope, item.sizeY);
-						}
-					}
-					scope.$watch(function() {
-						return item.sizeY + ',' + item.sizeX + '|' + item.minSizeX + ',' + item.maxSizeX + ',' + item.minSizeY + ',' + item.maxSizeY;
-					}, sizeChanged);
-
-					var draggable = new GridsterDraggable($el, scope, gridster, item, options);
-					var resizable = new GridsterResizable($el, scope, gridster, item, options);
-
-					scope.$on('gridster-draggable-changed', function() {
-						draggable.toggle(!gridster.isMobile && gridster.draggable && gridster.draggable.enabled);
-					});
-					scope.$on('gridster-resizable-changed', function() {
-						resizable.toggle(!gridster.isMobile && gridster.resizable && gridster.resizable.enabled);
-					});
-					scope.$on('gridster-resized', function() {
-						resizable.toggle(!gridster.isMobile && gridster.resizable && gridster.resizable.enabled);
-					});
-					scope.$watch(function() {
-						return gridster.isMobile;
-					}, function() {
-						resizable.toggle(!gridster.isMobile && gridster.resizable && gridster.resizable.enabled);
-						draggable.toggle(!gridster.isMobile && gridster.draggable && gridster.draggable.enabled);
-					});
-
-					function whichTransitionEvent() {
-						var el = document.createElement('div');
-						var transitions = {
-							'transition': 'transitionend',
-							'OTransition': 'oTransitionEnd',
-							'MozTransition': 'transitionend',
-							'WebkitTransition': 'webkitTransitionEnd'
+							// initial set
+							var val = $getters[aspect](scope);
+							if (typeof val === 'number') {
+								item[aspect] = val;
+							}
 						};
-						for (var t in transitions) {
-							if (el.style[t] !== undefined) {
-								return transitions[t];
+
+						for (var i = 0, l = aspects.length; i < l; ++i) {
+							aspectFn(aspects[i]);
+						}
+
+						function positionChanged() {
+							// call setPosition so the element and gridster controller are updated
+							item.setPosition(item.row, item.col);
+
+							// when internal item position changes, update externally bound values
+							if ($getters.row && $getters.row.assign) {
+								$getters.row.assign(scope, item.row);
+							}
+							if ($getters.col && $getters.col.assign) {
+								$getters.col.assign(scope, item.col);
 							}
 						}
-					}
+						scope.$watch(function() {
+							return item.row + ',' + item.col;
+						}, positionChanged);
 
-					$el.on(whichTransitionEvent(), function() {
-						scope.$apply(function() {
-							scope.$broadcast('gridster-item-transition-end');
+						function sizeChanged() {
+							item.setSizeX(item.sizeX);
+							if ($getters.sizeX && $getters.sizeX.assign) {
+								$getters.sizeX.assign(scope, item.sizeX);
+							}
+							item.setSizeY(item.sizeY);
+							if ($getters.sizeY && $getters.sizeY.assign) {
+								$getters.sizeY.assign(scope, item.sizeY);
+							}
+						}
+						scope.$watch(function() {
+							return item.sizeY + ',' + item.sizeX + '|' + item.minSizeX + ',' + item.maxSizeX + ',' + item.minSizeY + ',' + item.maxSizeY;
+						}, sizeChanged);
+
+						var draggable = new GridsterDraggable($el, scope, gridster, item, options);
+						var resizable = new GridsterResizable($el, scope, gridster, item, options);
+
+						scope.$on('gridster-draggable-changed', function() {
+							draggable.toggle(!gridster.isMobile && gridster.draggable && gridster.draggable.enabled);
 						});
-					});
+						scope.$on('gridster-resizable-changed', function() {
+							resizable.toggle(!gridster.isMobile && gridster.resizable && gridster.resizable.enabled);
+						});
+						scope.$on('gridster-resized', function() {
+							resizable.toggle(!gridster.isMobile && gridster.resizable && gridster.resizable.enabled);
+						});
+						scope.$watch(function() {
+							return gridster.isMobile;
+						}, function() {
+							resizable.toggle(!gridster.isMobile && gridster.resizable && gridster.resizable.enabled);
+							draggable.toggle(!gridster.isMobile && gridster.draggable && gridster.draggable.enabled);
+						});
 
-					return scope.$on('$destroy', function() {
-						try {
-							resizable.destroy();
-							draggable.destroy();
-						} catch (e) {}
+						function whichTransitionEvent() {
+							var el = document.createElement('div');
+							var transitions = {
+								'transition': 'transitionend',
+								'OTransition': 'oTransitionEnd',
+								'MozTransition': 'transitionend',
+								'WebkitTransition': 'webkitTransitionEnd'
+							};
+							for (var t in transitions) {
+								if (el.style[t] !== undefined) {
+									return transitions[t];
+								}
+							}
+						}
 
-						try {
-							gridster.removeItem(item);
-						} catch (e) {}
+						$el.on(whichTransitionEvent(), function() {
+							scope.$apply(function() {
+								scope.$broadcast('gridster-item-transition-end');
+							});
+						});
 
-						try {
-							item.destroy();
-						} catch (e) {}
-					});
+						//Only check if the element is closer to another when the element has stopped moving.
+						if (gridster.multiGridster.enabled) {
+							item.dataModel = attrs.model;
+							$el.on('mouseup', function() {
+								var newGrid = GridsterMaster.findClosestGridster($el);
+								if (newGrid !== gridster) {
+									gridster.multiGridster.callback(gridster, newGrid, item);
+
+								}
+							});
+						}
+
+						return scope.$on('$destroy', function() {
+							try {
+								resizable.destroy();
+								draggable.destroy();
+							} catch (e) {}
+
+							try {
+								gridster.removeItem(item);
+							} catch (e) {}
+
+							try {
+								item.destroy();
+							} catch (e) {}
+						});
+					}
+				};
+			}
+		])
+		.factory('RectangleHelper', function() {
+			return {
+				/**
+				 * @ngdoc service
+				 * @name uasApp.rectangleHelp:hasInner
+				 * @description
+				 * Return true iff the innerRect is inside the outerRect.
+				 */
+				hasInner: function(outerRect, innerRect) {
+					var outTopLeft = {
+						x: outerRect.left,
+						y: outerRect.top
+					};
+					var outBottomRight = {
+						x: outerRect.right,
+						y: outerRect.bottom
+					};
+					var innerTopLeft = {
+						x: innerRect.left,
+						y: innerRect.top
+					};
+					var innerBottomRight = {
+						x: innerRect.right,
+						y: innerRect.bottom
+					};
+					return ((outTopLeft.x <= innerTopLeft.x && outBottomRight.x >= innerBottomRight.x) &&
+						(outTopLeft.y <= innerTopLeft.y && outBottomRight.y >= innerBottomRight.y));
+				},
+				/**
+				 * @ngdoc service
+				 * @name uasApp.rectangleHelp:hasInner
+				 * @description
+				 * Return 0 if yRect is in xRect otherwise the distance from the xRect to the yRect
+				 */
+				distance: function(thisRect, otherRect) {
+					if (this.hasInner(thisRect, otherRect)) {
+						return 0;
+					}
+					var thisCoord = {
+						x: (thisRect.left + thisRect.right) / 2,
+						y: (thisRect.top + thisRect.bottom) / 2
+					};
+					var otherCoord = {
+						x: (otherRect.left + otherRect.right) / 2,
+						y: (otherRect.top + otherRect.bottom) / 2
+					};
+					return Math.sqrt(Math.pow(thisCoord.x - otherCoord.x, 2) + Math.pow(thisCoord.y - otherCoord.y, 2));
 				}
 			};
-		}
-	])
-
-	;
+		});
 
 })(angular);
