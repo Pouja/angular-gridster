@@ -832,8 +832,8 @@
 	 * @param {object} $parse
 	 * @param {object} $timeout
 	 */
-	.directive('gridster', ['$timeout', '$rootScope', '$window',
-		function($timeout, $rootScope, $window) {
+	.directive('gridster', ['$timeout', '$rootScope', '$window', 'GridsterMaster', 'RectangleHelper',
+		function($timeout, $rootScope, $window, GridsterMaster, RectangleHelper) {
 			return {
 				restrict: 'EAC',
 				// without transclude, some child items may lose their parent scope
@@ -881,6 +881,10 @@
 						var refresh = function() {
 							gridster.setOptions(scope.config);
 
+							if (gridster.multiGridster.enabled) {
+								GridsterMaster.register(gridster);
+							}
+
 							// resolve "auto" & "match" values
 							if (gridster.width === 'auto') {
 								gridster.curWidth = $elem[0].offsetWidth || parseInt($elem.css('width'), 10);
@@ -925,6 +929,30 @@
 							}
 
 							updateHeight();
+						};
+
+						/**
+						 * The model that is coupled with this directive/controller.
+						 * This should be whatever you want, identifier, object, array, number, something to differentiate the different gridsters.
+						 * It should be used when you want to move one item from a gridster to another.
+						 */
+						gridster.dataModel = attrs.model;
+
+						/**
+						 * Note: Not sure if this is the most correct way.
+						 * Calculates the distance from an element to this one.
+						 * @return {Number} Number.MIN_VALUE when the element is inside this element otherwise an distance number.
+						 */
+						gridster.distanceToMe = function(other) {
+							var elRect = $elem[0].getBoundingClientRect();
+							var otherRect = other[0].getBoundingClientRect();
+							//If the element isn't vissible return the max distance
+							if ($elem[0].offsetParent === null) {
+								return Number.MAX_VALUE;
+							}
+
+							var distance = RectangleHelper.distance(elRect, otherRect);
+							return (distance === 0) ? Number.MIN_VALUE : distance;
 						};
 
 						// update grid items on config changes
@@ -987,6 +1015,7 @@
 						// be sure to cleanup
 						scope.$on('$destroy', function() {
 							gridster.destroy();
+							GridsterMaster.unregister(scope);
 							$win.off('resize', onResize);
 						});
 
@@ -1263,20 +1292,23 @@
 
 					var dX = diffX,
 						dY = diffY;
-					if (elmX + dX < minLeft) {
-						diffX = minLeft - elmX;
-						mOffX = dX - diffX;
-					} else if (elmX + elmW + dX > maxLeft) {
-						diffX = maxLeft - elmX - elmW;
-						mOffX = dX - diffX;
-					}
 
-					if (elmY + dY < minTop) {
-						diffY = minTop - elmY;
-						mOffY = dY - diffY;
-					} else if (elmY + elmH + dY > maxTop) {
-						diffY = maxTop - elmY - elmH;
-						mOffY = dY - diffY;
+					if (!gridster.multiGridster.enabled) {
+						if (elmX + dX < minLeft) {
+							diffX = minLeft - elmX;
+							mOffX = dX - diffX;
+						} else if (elmX + elmW + dX > maxLeft) {
+							diffX = maxLeft - elmX - elmW;
+							mOffX = dX - diffX;
+						}
+
+						if (elmY + dY < minTop) {
+							diffY = minTop - elmY;
+							mOffY = dY - diffY;
+						} else if (elmY + elmH + dY > maxTop) {
+							diffY = maxTop - elmY - elmH;
+							mOffY = dY - diffY;
+						}
 					}
 					elmX += diffX;
 					elmY += diffY;
