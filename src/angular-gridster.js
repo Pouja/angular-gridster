@@ -14,6 +14,9 @@
 		rowHeight: 'match', // height of grid rows. 'match' will make it the same as the column width, a numeric value will be interpreted as pixels, '/2' is half the column width, '*5' is five times the column width, etc.
 		margins: [10, 10], // margins in between grid items
 		outerMargin: true,
+		multiGridster: {
+			enabled: false, // Define if this should be placed in a group of gridsters which can exchange gridster items
+		},
 		isMobile: false, // toggle mobile view
 		mobileBreakPoint: 600, // width threshold to toggle mobile mode
 		mobileModeEnabled: true, // whether or not to toggle mobile mode when screen width is less than mobileBreakPoint
