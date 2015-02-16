@@ -46,14 +46,14 @@
 
 		return {
 			/**
-			 * @param {Object} gridster A MulitGridster instance.
+			 * @param {Object} gridster A MultiGridster instance.
 			 * Registers a new item to be tracked by the factory.
 			 */
 			register: function(gridster) {
 				gridsters.push(gridster);
 			},
 			/**
-			 * @param {Object} gridster A MulitGridster instance.
+			 * @param {Object} gridster A MultiGridster instance.
 			 * Unregisters an item to be tracked by the factory.
 			 */
 			unregister: function(gridster) {
