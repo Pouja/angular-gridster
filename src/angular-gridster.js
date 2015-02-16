@@ -14,9 +14,7 @@
 		rowHeight: 'match', // height of grid rows. 'match' will make it the same as the column width, a numeric value will be interpreted as pixels, '/2' is half the column width, '*5' is five times the column width, etc.
 		margins: [10, 10], // margins in between grid items
 		outerMargin: true,
-		multiGridster: {
-			enabled: false, // Define if this should be placed in a group of gridsters which can exchange gridster items
-		},
+		multiGridster: false, // Define if this should be placed in a group of gridsters which can exchange gridster items
 		isMobile: false, // toggle mobile view
 		mobileBreakPoint: 600, // width threshold to toggle mobile mode
 		mobileModeEnabled: true, // whether or not to toggle mobile mode when screen width is less than mobileBreakPoint
@@ -885,7 +883,7 @@
 						var refresh = function() {
 							gridster.setOptions(scope.config);
 
-							if (gridster.multiGridster.enabled) {
+							if (gridster.multiGridster) {
 								GridsterMaster.register(gridster);
 							}
 
@@ -1292,7 +1290,7 @@
 					var dX = diffX,
 						dY = diffY;
 
-					if (!gridster.multiGridster.enabled) {
+					if (!gridster.multiGridster) {
 						if (elmX + dX < minLeft) {
 							diffX = minLeft - elmX;
 							mOffX = dX - diffX;
@@ -1353,7 +1351,7 @@
 				}
 
 				function drag(event) {
-					if (gridster.multiGridster && gridster.multiGridster.enabled) {
+					if (gridster.multiGridster) {
 						var closestGridster = GridsterMaster.findClosestGridster($el);
 						if (closestGridster !== gridster) {
 							gridster.movingItem = null;
@@ -1438,7 +1436,7 @@
 						if (gridster.draggable && gridster.draggable.stop) {
 							gridster.draggable.stop(event, $el, itemOptions);
 						}
-						if (gridster.multiGridster && gridster.multiGridster.enabled && originalGridster !== gridster) {
+						if (gridster.multiGridster && originalGridster !== gridster) {
 							gridster.removeItem(item);
 							gridster.model.add(item.model);
 							originalGridster.model.remove(item.model);

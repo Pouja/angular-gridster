@@ -187,9 +187,7 @@ angular.module('app')
 		resizable: {
 			enabled: false
 		},
-		multiGridster: {
-			enabled: true
-		}
+		multiGridster: true
 	};
 
 	$scope.multiItems1 = function() {
