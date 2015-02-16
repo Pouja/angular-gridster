@@ -843,12 +843,16 @@
 				controller: 'GridsterCtrl',
 				controllerAs: 'gridster',
 				scope: {
+					model: '=?model',
 					config: '=?gridster'
 				},
 				compile: function() {
 
 					return function(scope, $elem, attrs, gridster) {
 						gridster.loaded = false;
+
+						gridster.$element = $elem;
+						gridster.model = scope.model;
 
 						scope.gridsterClass = function() {
 							return {
@@ -1785,19 +1789,22 @@
 	/**
 	 * GridsterItem directive
 	 */
-	.directive('gridsterItem', ['$parse', 'GridsterDraggable', 'GridsterResizable', 'GridsterMaster',
-			function($parse, GridsterDraggable, GridsterResizable, GridsterMaster) {
+	.directive('gridsterItem', ['$parse', 'GridsterDraggable', 'GridsterResizable',
+			function($parse, GridsterDraggable, GridsterResizable) {
 				return {
 					restrict: 'EA',
 					controller: 'GridsterItemCtrl',
 					require: ['^gridster', 'gridsterItem'],
+					scope: {
+						model: '=?'
+					},
 					link: function(scope, $el, attrs, controllers) {
 						var optionsKey = attrs.gridsterItem,
 							options;
 
 						var gridster = controllers[0],
 							item = controllers[1];
-
+						item.model = scope.model;
 						// bind the item's position properties
 						if (optionsKey) {
 							var $optionsGetter = $parse(optionsKey);
