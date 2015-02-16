@@ -1218,11 +1218,12 @@
 		};
 	})
 
-	.factory('GridsterDraggable', ['$document', '$timeout', '$window',
-		function($document, $timeout, $window) {
+	.factory('GridsterDraggable', ['$document', '$timeout', '$window', 'GridsterMaster',
+		function($document, $timeout, $window, GridsterMaster) {
 			function GridsterDraggable($el, scope, gridster, item, itemOptions) {
 				var elmX, elmY, elmW, elmH,
-
+					originalGridster = gridster,
+					oldOffsetTop = 0,
 					mouseX = 0,
 					mouseY = 0,
 					lastMouseX = 0,
@@ -1268,6 +1269,8 @@
 
 					originalCol = item.col;
 					originalRow = item.row;
+
+					oldOffsetTop = originalGridster.$element[0].offsetTop;
 
 					dragStart(e);
 
@@ -1315,6 +1318,11 @@
 						}
 					}
 					elmX += diffX;
+
+					if (gridster.multiGridster && oldOffsetTop !== originalGridster.$element[0].offsetTop) {
+						diffY += oldOffsetTop - originalGridster.$element[0].offsetTop;
+						oldOffsetTop = originalGridster.$element[0].offsetTop;
+					}
 					elmY += diffY;
 
 					// set new position
@@ -1353,6 +1361,17 @@
 				}
 
 				function drag(event) {
+					if (gridster.multiGridster && gridster.multiGridster.enabled) {
+						var closestGridster = GridsterMaster.findClosestGridster($el);
+						if (closestGridster !== gridster) {
+							gridster.movingItem = null;
+							gridster.removeItem(item);
+							closestGridster.movingItem = item;
+							item.gridster = closestGridster;
+							gridster = closestGridster;
+						}
+					}
+
 					var oldRow = item.row,
 						oldCol = item.col,
 						hasCallback = gridster.draggable && gridster.draggable.drag,
@@ -1423,10 +1442,14 @@
 					item.setPosition(item.row, item.col);
 					item.setSizeY(item.sizeY);
 					item.setSizeX(item.sizeX);
-
 					scope.$apply(function() {
 						if (gridster.draggable && gridster.draggable.stop) {
 							gridster.draggable.stop(event, $el, itemOptions);
+						}
+						if (gridster.multiGridster && gridster.multiGridster.enabled && originalGridster !== gridster) {
+							gridster.removeItem(item);
+							gridster.model.add(item.model);
+							originalGridster.model.remove(item.model);
 						}
 					});
 				}
@@ -1933,18 +1956,6 @@
 								scope.$broadcast('gridster-item-transition-end');
 							});
 						});
-
-						//Only check if the element is closer to another when the element has stopped moving.
-						if (gridster.multiGridster.enabled) {
-							item.dataModel = attrs.model;
-							$el.on('mouseup', function() {
-								var newGrid = GridsterMaster.findClosestGridster($el);
-								if (newGrid !== gridster) {
-									gridster.multiGridster.callback(gridster, newGrid, item);
-
-								}
-							});
-						}
 
 						return scope.$on('$destroy', function() {
 							try {
