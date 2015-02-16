@@ -187,58 +187,80 @@ angular.module('app')
 			enabled: false,
 		},
 		multiGridster: {
-			enabled: true,
-			callback: function(oldGridster, newGridster, gridsterItem) {
-				var multiItem;
-				$scope[oldGridster.dataModel].some(function(item, index) {
-					if (item.id == gridsterItem.dataModel) {
-						multiItem = item;
-						$scope[oldGridster.dataModel].splice(index, 1);
-						return true;
-					}
-				});
-				$scope[newGridster.dataModel].push(multiItem);
-			}
+			enabled: true
 		}
 	};
 
-	$scope.multiItems1 = [{
-		id: 1,
-		sizeX: 1,
-		sizeY: 1,
-		row: 0,
-		col: 0
-	}, {
-		id: 2,
-		sizeX: 1,
-		sizeY: 1,
-		row: 1,
-		col: 2
-	}, {
-		id: 3,
-		sizeX: 1,
-		sizeY: 1,
-		row: 1,
-		col: 1
-	}];
+	$scope.multiItems1 = function() {
+		var self = {
+			items: [{
+				id: 1,
+				sizeX: 1,
+				sizeY: 1,
+				row: 0,
+				col: 0
+			}, {
+				id: 2,
+				sizeX: 1,
+				sizeY: 1,
+				row: 1,
+				col: 2
+			}, {
+				id: 3,
+				sizeX: 1,
+				sizeY: 1,
+				row: 1,
+				col: 1
+			}],
+			add: function(item) {
+				self.items.push(item);
+			},
+			remove: function(item) {
+				for (var i = 0; i < self.items.length; i++) {
+					if (self.items[i] === item) {
+						self.items.splice(i, 1);
+						break;
+					}
+				}
+			}
+		}
+		return self;
+	}();
 
-	$scope.multiItems2 = [{
-		id: 4,
-		sizeX: 1,
-		sizeY: 1,
-		row: 0,
-		col: 0
-	}, {
-		id: 5,
-		sizeX: 1,
-		sizeY: 1,
-		row: 1,
-		col: 2
-	}, {
-		id: 6,
-		sizeX: 1,
-		sizeY: 1,
-		row: 1,
-		col: 1
-	}];
+	$scope.multiItems2 = function() {
+		var self = {
+			items: [{
+				id: 4,
+				sizeX: 1,
+				sizeY: 1,
+				row: 0,
+				col: 0
+			}, {
+				id: 5,
+				sizeX: 1,
+				sizeY: 1,
+				row: 1,
+				col: 2
+			}, {
+				id: 6,
+				sizeX: 1,
+				sizeY: 1,
+				row: 1,
+				col: 1
+			}],
+			add: function(item) {
+				console.log(item);
+				self.items.push(item);
+			},
+			remove: function(item) {
+				for (var i = 0; i < self.items.length; i++) {
+					if (self.items[i] === item) {
+						self.items.splice(i, 1);
+						break;
+					}
+				}
+			}
+		}
+		return self;
+	}();
 });
