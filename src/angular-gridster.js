@@ -1363,7 +1363,7 @@
 							item.gridster = closestGridster;
 							gridster = closestGridster;
 						}
-						// We need to take the relative row position not of the item to his original gridster, but to his closest one
+						// We need to take the row position not of the item to his original gridster, but to his closest one
 						row = gridster.pixelsToRows(elmY +
 							originalGridster.$element[0].offsetTop - gridster.$element[0].offsetTop);
 					} else {
@@ -1423,11 +1423,12 @@
 				}
 
 				function dragStop(event) {
+					var isValidMove = true;
 					$el.removeClass('gridster-item-moving');
 					var row = gridster.pixelsToRows(elmY);
 
 					if (gridster.multiGridster) {
-						// We need to take the relative row position not of the item to his original gridster, but to his closest one
+						// We need to take the row position not of the item to his original gridster, but to his closest one
 						row = gridster.pixelsToRows(elmY +
 							originalGridster.$element[0].offsetTop - gridster.$element[0].offsetTop);
 					}
@@ -1440,6 +1441,8 @@
 					gridster.movingItem = null;
 
 					if (gridster.isValidMove && !gridster.isValidMove(event, $el, itemOptions, item)) {
+						isValidMove = false;
+						item.gridster = originalGridster;
 						item.row = originalRow;
 						item.col = originalCol;
 					}
@@ -1451,10 +1454,16 @@
 						if (gridster.draggable && gridster.draggable.stop) {
 							gridster.draggable.stop(event, $el, itemOptions);
 						}
-						if (gridster.multiGridster && originalGridster !== gridster) {
+						if (gridster.multiGridster && originalGridster !== gridster && isValidMove) {
 							gridster.removeItem(item);
-							gridster.model.add(item.model);
-							originalGridster.model.remove(item.model);
+							if (gridster.model.hasOwnProperty('add')) {
+								gridster.model.add(item.model);
+							} else {
+								throw new Error('When using multi gridsters the model that is passed should have the \'add\' function.');
+							}
+							if (gridster.model.hasOwnProperty('remove')) {
+								originalGridster.model.remove(item.model);
+							}
 						}
 					});
 				}
