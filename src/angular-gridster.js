@@ -1309,6 +1309,8 @@
 					}
 					elmX += diffX;
 
+					// It can happen the css top postion of the gridster where the item is placed originally is moved (due updateHeight())
+					// So take that in account
 					if (gridster.multiGridster && oldOffsetTop !== originalGridster.$element[0].offsetTop) {
 						diffY += oldOffsetTop - originalGridster.$element[0].offsetTop;
 						oldOffsetTop = originalGridster.$element[0].offsetTop;
@@ -1351,6 +1353,7 @@
 				}
 
 				function drag(event) {
+					var row;
 					if (gridster.multiGridster) {
 						var closestGridster = GridsterMaster.findClosestGridster($el);
 						if (closestGridster !== gridster) {
@@ -1360,7 +1363,14 @@
 							item.gridster = closestGridster;
 							gridster = closestGridster;
 						}
+						// We need to take the relative row position not of the item to his original gridster, but to his closest one
+						row = gridster.pixelsToRows(elmY +
+							originalGridster.$element[0].offsetTop - gridster.$element[0].offsetTop);
+					} else {
+						row = gridster.pixelsToRows(elmY);
 					}
+
+					var col = gridster.pixelsToColumns(elmX);
 
 					var oldRow = item.row,
 						oldCol = item.col,
@@ -1368,8 +1378,6 @@
 						scrollSensitivity = gridster.draggable.scrollSensitivity,
 						scrollSpeed = gridster.draggable.scrollSpeed;
 
-					var row = gridster.pixelsToRows(elmY);
-					var col = gridster.pixelsToColumns(elmX);
 
 					var itemsInTheWay = gridster.getItems(row, col, item.sizeX, item.sizeY, item);
 					var hasItemsInTheWay = itemsInTheWay.length !== 0;
@@ -1417,6 +1425,13 @@
 				function dragStop(event) {
 					$el.removeClass('gridster-item-moving');
 					var row = gridster.pixelsToRows(elmY);
+
+					if (gridster.multiGridster) {
+						// We need to take the relative row position not of the item to his original gridster, but to his closest one
+						row = gridster.pixelsToRows(elmY +
+							originalGridster.$element[0].offsetTop - gridster.$element[0].offsetTop);
+					}
+
 					var col = gridster.pixelsToColumns(elmX);
 					if (gridster.pushing !== false || gridster.getItems(row, col, item.sizeX, item.sizeY, item).length === 0) {
 						item.row = row;
