@@ -177,6 +177,7 @@ angular.module('app')
 
 	$scope.multiGridsterOpts = {
 		margins: [10, 10],
+		columns: 5,
 		outerMargin: false,
 		pushing: true,
 		floating: true,
@@ -184,7 +185,7 @@ angular.module('app')
 			enabled: true
 		},
 		resizable: {
-			enabled: false,
+			enabled: false
 		},
 		multiGridster: {
 			enabled: true
@@ -246,10 +247,9 @@ angular.module('app')
 				sizeX: 1,
 				sizeY: 1,
 				row: 1,
-				col: 1
+				col: 11
 			}],
 			add: function(item) {
-				console.log(item);
 				self.items.push(item);
 			},
 			remove: function(item) {

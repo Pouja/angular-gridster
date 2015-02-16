@@ -936,14 +936,6 @@
 						};
 
 						/**
-						 * The model that is coupled with this directive/controller.
-						 * This should be whatever you want, identifier, object, array, number, something to differentiate the different gridsters.
-						 * It should be used when you want to move one item from a gridster to another.
-						 */
-						gridster.dataModel = attrs.model;
-
-						/**
-						 * Note: Not sure if this is the most correct way.
 						 * Calculates the distance from an element to this one.
 						 * @return {Number} Number.MIN_VALUE when the element is inside this element otherwise an distance number.
 						 */
@@ -1818,16 +1810,14 @@
 					restrict: 'EA',
 					controller: 'GridsterItemCtrl',
 					require: ['^gridster', 'gridsterItem'],
-					scope: {
-						model: '=?'
-					},
 					link: function(scope, $el, attrs, controllers) {
 						var optionsKey = attrs.gridsterItem,
 							options;
 
 						var gridster = controllers[0],
 							item = controllers[1];
-						item.model = scope.model;
+						item.model = $parse(attrs.model)(scope);
+
 						// bind the item's position properties
 						if (optionsKey) {
 							var $optionsGetter = $parse(optionsKey);
