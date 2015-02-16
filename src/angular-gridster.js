@@ -74,8 +74,8 @@
 	})
 
 
-	.controller('GridsterCtrl', ['gridsterConfig',
-		function(gridsterConfig) {
+	.controller('GridsterCtrl', ['gridsterConfig', 'RectangleHelper',
+		function(gridsterConfig, RectangleHelper) {
 			/**
 			 * Create options from gridsterConfig constant
 			 */
@@ -133,6 +133,22 @@
 						}
 					}
 				}
+			};
+
+			/**
+			 * Calculates the distance from an element to this one.
+			 * @return {Number} Number.MIN_VALUE when the element is inside this element otherwise an distance number.
+			 */
+			this.distanceToMe = function(other) {
+				var elRect = this.$element[0].getBoundingClientRect();
+				var otherRect = other[0].getBoundingClientRect();
+				//If the element isn't vissible return the max distance
+				if (this.$element[0].offsetParent === null) {
+					return Number.MAX_VALUE;
+				}
+
+				var distance = RectangleHelper.distance(elRect, otherRect);
+				return (distance === 0) ? Number.MIN_VALUE : distance;
 			};
 
 			/**
@@ -830,8 +846,8 @@
 	 * @param {object} $parse
 	 * @param {object} $timeout
 	 */
-	.directive('gridster', ['$timeout', '$rootScope', '$window', 'GridsterMaster', 'RectangleHelper',
-		function($timeout, $rootScope, $window, GridsterMaster, RectangleHelper) {
+	.directive('gridster', ['$timeout', '$rootScope', '$window', 'GridsterMaster',
+		function($timeout, $rootScope, $window, GridsterMaster) {
 			return {
 				restrict: 'EAC',
 				// without transclude, some child items may lose their parent scope
@@ -931,22 +947,6 @@
 							}
 
 							updateHeight();
-						};
-
-						/**
-						 * Calculates the distance from an element to this one.
-						 * @return {Number} Number.MIN_VALUE when the element is inside this element otherwise an distance number.
-						 */
-						gridster.distanceToMe = function(other) {
-							var elRect = $elem[0].getBoundingClientRect();
-							var otherRect = other[0].getBoundingClientRect();
-							//If the element isn't vissible return the max distance
-							if ($elem[0].offsetParent === null) {
-								return Number.MAX_VALUE;
-							}
-
-							var distance = RectangleHelper.distance(elRect, otherRect);
-							return (distance === 0) ? Number.MIN_VALUE : distance;
 						};
 
 						// update grid items on config changes
