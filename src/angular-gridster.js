@@ -1446,7 +1446,9 @@
 					if (gridster.multiGridster && originalGridster !== gridster && isValidMove) {
 						gridster.removeItem(item);
 						if (gridster.model.hasOwnProperty('add')) {
-							gridster.model.add(item.model);
+							setTimeout(function() {
+								gridster.model.add(item.model);
+							});
 						} else {
 							throw new Error('When using multi gridsters the model that is passed should have the \'add\' function.');
 						}

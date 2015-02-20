@@ -212,7 +212,7 @@ angular.module('app')
 				col: 1
 			}],
 			add: function(item) {
-				self.items.push(angular.copy(item));
+				self.items.push(item);
 			},
 			remove: function(item) {
 				for (var i = 0; i < self.items.length; i++) {
@@ -248,7 +248,7 @@ angular.module('app')
 				col: 11
 			}],
 			add: function(item) {
-				self.items.push(angular.copy(item));
+				self.items.push(item);
 			},
 			remove: function(item) {
 				for (var i = 0; i < self.items.length; i++) {
