@@ -1447,23 +1447,25 @@
 						item.col = originalCol;
 					}
 
-					item.setPosition(item.row, item.col);
-					item.setSizeY(item.sizeY);
-					item.setSizeX(item.sizeX);
+					if (gridster.multiGridster && originalGridster !== gridster && isValidMove) {
+						gridster.removeItem(item);
+						if (gridster.model.hasOwnProperty('add')) {
+							gridster.model.add(item.model);
+						} else {
+							throw new Error('When using multi gridsters the model that is passed should have the \'add\' function.');
+						}
+						if (gridster.model.hasOwnProperty('remove')) {
+							originalGridster.model.remove(item.model);
+						}
+					} else {
+						item.setPosition(item.row, item.col);
+						item.setSizeY(item.sizeY);
+						item.setSizeX(item.sizeX);
+					}
+
 					scope.$apply(function() {
 						if (gridster.draggable && gridster.draggable.stop) {
 							gridster.draggable.stop(event, $el, itemOptions);
-						}
-						if (gridster.multiGridster && originalGridster !== gridster && isValidMove) {
-							gridster.removeItem(item);
-							if (gridster.model.hasOwnProperty('add')) {
-								gridster.model.add(item.model);
-							} else {
-								throw new Error('When using multi gridsters the model that is passed should have the \'add\' function.');
-							}
-							if (gridster.model.hasOwnProperty('remove')) {
-								originalGridster.model.remove(item.model);
-							}
 						}
 					});
 				}
