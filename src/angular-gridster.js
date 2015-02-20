@@ -312,7 +312,6 @@
 						}
 					}
 				}
-
 				item.oldRow = item.row = row;
 				item.oldColumn = item.col = column;
 
@@ -445,20 +444,17 @@
 					sizeY = item.sizeY,
 					sizeX = item.sizeX,
 					bestRow = null,
-					bestColumn = null,
 					rowIndex = item.row - 1;
-
 				while (rowIndex > -1) {
 					var items = this.getItems(rowIndex, colIndex, sizeX, sizeY, item);
 					if (items.length !== 0) {
 						break;
 					}
 					bestRow = rowIndex;
-					bestColumn = colIndex;
 					--rowIndex;
 				}
 				if (bestRow !== null) {
-					this.putItem(item, bestRow, bestColumn);
+					this.putItem(item, bestRow, colIndex);
 				}
 			};
 
@@ -1456,6 +1452,9 @@
 						}
 						if (gridster.model.hasOwnProperty('remove')) {
 							originalGridster.model.remove(item.model);
+						} else {
+							item.gridster = originalGridster;
+							item.setPosition(originalRow, originalCol);
 						}
 					} else {
 						item.setPosition(item.row, item.col);
