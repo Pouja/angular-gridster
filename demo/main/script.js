@@ -172,20 +172,8 @@ angular.module('app')
 		sizeX: 'item.size.x',
 		sizeY: 'item.size.y',
 		row: 'item.position[0]',
-		col: 'item.position[1]'
+		col: 'item.position[1]',
 	};
-
-	$scope.validMoveGridster = {
-		draggable: {
-			enabled: true
-		},
-		resizable: {
-			enabled: true
-		},
-		isValidMove: function(event, $el, itemOptions, item, gridsterModel) {
-			return item.sizeX < 5 && item.col !== 0;
-		}
-	}
 
 	$scope.multiGridsterOpts = {
 		margins: [10, 10],
@@ -269,5 +257,4 @@ angular.module('app')
 		}
 		return self;
 	}();
-
 });
