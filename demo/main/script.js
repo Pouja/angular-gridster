@@ -175,4 +175,99 @@ angular.module('app')
 		col: 'item.position[1]'
 	};
 
+	$scope.validMoveGridster = {
+		draggable: {
+			enabled: true
+		},
+		resizable: {
+			enabled: true
+		},
+		isValidMove: function(event, $el, itemOptions, item, gridsterModel) {
+			return item.sizeX < 5 && item.col !== 0;
+		}
+	}
+
+	$scope.multiGridsterOpts = {
+		margins: [10, 10],
+		columns: 5,
+		outerMargin: false,
+		pushing: true,
+		floating: true,
+		draggable: {
+			enabled: true
+		},
+		resizable: {
+			enabled: false
+		},
+		multiGridster: {
+			// When removing the original, it will place the new on at the original place of the original.
+			// That is why the position argument is given, it also contains the sizeX and sizeY.
+			add: function(item, group, position) {
+				item = angular.copy(item);
+				item.row = position.row;
+				item.col = position.col;
+				group.items.push(item);
+			},
+			enabled: true,
+			remove: function(item, group) {
+				for (var i = 0; i < group.items.length; i++) {
+					if (group.items[i] === item) {
+						group.items.splice(i, 1);
+						break;
+					}
+				}
+			}
+		}
+	};
+
+	$scope.multiItems1 = function() {
+		var self = {
+			items: [{
+				id: 1,
+				sizeX: 1,
+				sizeY: 1,
+				row: 0,
+				col: 0
+			}, {
+				id: 2,
+				sizeX: 1,
+				sizeY: 1,
+				row: 1,
+				col: 2
+			}, {
+				id: 3,
+				sizeX: 1,
+				sizeY: 1,
+				row: 1,
+				col: 1
+			}]
+		}
+		return self;
+	}();
+
+	$scope.multiItems2 = function() {
+		var self = {
+			items: [{
+				id: 4,
+				sizeX: 1,
+				sizeY: 1,
+				row: 0,
+				col: 0
+			}, {
+				id: 5,
+				sizeX: 1,
+				sizeY: 1,
+				row: 1,
+				col: 2
+			}, {
+				id: 6,
+				sizeX: 1,
+				sizeY: 1,
+				row: 1,
+				col: 11
+			}]
+		}
+		return self;
+	}();
+
 });

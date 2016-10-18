@@ -21,42 +21,80 @@
 	return angular.module('gridster', [])
 
 	.constant('gridsterConfig', {
-		columns: 6, // number of columns in the grid
-		pushing: true, // whether to push other items out of the way
-		floating: true, // whether to automatically float items up so they stack
-		swapping: false, // whether or not to have items switch places instead of push down if they are the same size
-		width: 'auto', // width of the grid. "auto" will expand the grid to its parent container
-		colWidth: 'auto', // width of grid columns. "auto" will divide the width of the grid evenly among the columns
-		rowHeight: 'match', // height of grid rows. 'match' will make it the same as the column width, a numeric value will be interpreted as pixels, '/2' is half the column width, '*5' is five times the column width, etc.
-		margins: [10, 10], // margins in between grid items
-		outerMargin: true,
-		sparse: false, // "true" can increase performance of dragging and resizing for big grid (e.g. 20x50)
-		isMobile: false, // toggle mobile view
-		mobileBreakPoint: 600, // width threshold to toggle mobile mode
-		mobileModeEnabled: true, // whether or not to toggle mobile mode when screen width is less than mobileBreakPoint
-		minColumns: 1, // minimum amount of columns the grid can scale down to
-		minRows: 1, // minimum amount of rows to show if the grid is empty
-		maxRows: 100, // maximum amount of rows in the grid
-		defaultSizeX: 2, // default width of an item in columns
-		defaultSizeY: 1, // default height of an item in rows
-		minSizeX: 1, // minimum column width of an item
-		maxSizeX: null, // maximum column width of an item
-		minSizeY: 1, // minumum row height of an item
-		maxSizeY: null, // maximum row height of an item
-		saveGridItemCalculatedHeightInMobile: false, // grid item height in mobile display. true- to use the calculated height by sizeY given
-		resizable: { // options to pass to resizable handler
-			enabled: true,
-			handles: ['s', 'e', 'n', 'w', 'se', 'ne', 'sw', 'nw']
-		},
-		draggable: { // options to pass to draggable handler
-			enabled: true,
-			scrollSensitivity: 20, // Distance in pixels from the edge of the viewport after which the viewport should scroll, relative to pointer
-			scrollSpeed: 15 // Speed at which the window should scroll once the mouse pointer gets within scrollSensitivity distance
-		}
-	})
+			columns: 6, // number of columns in the grid
+			pushing: true, // whether to push other items out of the way
+			floating: true, // whether to automatically float items up so they stack
+			swapping: false, // whether or not to have items switch places instead of push down if they are the same size
+			width: 'auto', // width of the grid. "auto" will expand the grid to its parent container
+			colWidth: 'auto', // width of grid columns. "auto" will divide the width of the grid evenly among the columns
+			rowHeight: 'match', // height of grid rows. 'match' will make it the same as the column width, a numeric value will be interpreted as pixels, '/2' is half the column width, '*5' is five times the column width, etc.
+			margins: [10, 10], // margins in between grid items
+			outerMargin: true,
+			sparse: false, // "true" can increase performance of dragging and resizing for big grid (e.g. 20x50)
+			isMobile: false, // toggle mobile view
+			mobileBreakPoint: 600, // width threshold to toggle mobile mode
+			mobileModeEnabled: true, // whether or not to toggle mobile mode when screen width is less than mobileBreakPoint
+			minColumns: 1, // minimum amount of columns the grid can scale down to
+			minRows: 1, // minimum amount of rows to show if the grid is empty
+			maxRows: 100, // maximum amount of rows in the grid
+			defaultSizeX: 2, // default width of an item in columns
+			defaultSizeY: 1, // default height of an item in rows
+			minSizeX: 1, // minimum column width of an item
+			maxSizeX: null, // maximum column width of an item
+			minSizeY: 1, // minumum row height of an item
+			maxSizeY: null, // maximum row height of an item
+			saveGridItemCalculatedHeightInMobile: false, // grid item height in mobile display. true- to use the calculated height by sizeY given
+			resizable: { // options to pass to resizable handler
+				enabled: true,
+				handles: ['s', 'e', 'n', 'w', 'se', 'ne', 'sw', 'nw']
+			},
+			draggable: { // options to pass to draggable handler
+				enabled: true,
+				scrollSensitivity: 20, // Distance in pixels from the edge of the viewport after which the viewport should scroll, relative to pointer
+				scrollSpeed: 15 // Speed at which the window should scroll once the mouse pointer gets within scrollSensitivity distance
+			},
+			multiGridster: false
+		})
+		.factory('GridsterMaster', function() {
+			var gridsters = [];
 
-	.controller('GridsterCtrl', ['gridsterConfig', '$timeout',
-		function(gridsterConfig, $timeout) {
+			return {
+				/**
+				 * @param {Object} gridster A MultiGridster instance.
+				 * Registers a new item to be tracked by the factory.
+				 */
+				register: function(gridster) {
+					if (gridsters.every(function(g) {
+							return g !== gridster;
+						})) {
+						gridsters.push(gridster);
+					}
+				},
+				/**
+				 * @param {Object} gridster A MultiGridster instance.
+				 * Unregisters an item to be tracked by the factory.
+				 */
+				unregister: function(gridster) {
+					for (var i = 0; i < gridsters.length - 1; i++) {
+						if (gridsters[i] === gridster) {
+							gridsters.splice(i, 1);
+						}
+					}
+				},
+				/**
+				 * @param {Object} item An angular element.
+				 * @return {Object} The closest gridster to the given item.
+				 */
+				findClosestGridster: function(item) {
+					return gridsters.reduce(function(previous, current) {
+						return (previous.distanceToMe(item) < current.distanceToMe(item)) ? previous : current;
+					}, gridsters[0]);
+				}
+			};
+		})
+
+	.controller('GridsterCtrl', ['gridsterConfig', '$timeout', 'RectangleHelper',
+		function(gridsterConfig, $timeout, RectangleHelper) {
 
 			var gridster = this;
 
@@ -617,6 +655,22 @@
 
 				return Math.round(pixels / this.curColWidth);
 			};
+
+			/**
+			 * Calculates the distance from an element to this one.
+			 * @return {Number} Number.MIN_VALUE when the element is inside this element otherwise an distance number.
+			 */
+			this.distanceToMe = function(other) {
+				var elRect = this.$element[0].getBoundingClientRect();
+				var otherRect = other[0].getBoundingClientRect();
+				//If the element isn't vissible return the max distance
+				if (this.$element[0].offsetParent === null) {
+					return Number.MAX_VALUE;
+				}
+
+				var distance = RectangleHelper.distance(elRect, otherRect);
+				return (distance === 0) ? Number.MIN_VALUE : distance;
+			};
 		}
 	])
 
@@ -658,8 +712,8 @@
 	 * @param {Object} $rootScope
 	 * @param {Function} gridsterDebounce
 	 */
-	.directive('gridster', ['$timeout', '$window', '$rootScope', 'gridsterDebounce',
-		function($timeout, $window, $rootScope, gridsterDebounce) {
+	.directive('gridster', ['$timeout', '$window', '$rootScope', 'gridsterDebounce', 'GridsterMaster', '$parse',
+		function($timeout, $window, $rootScope, gridsterDebounce, GridsterMaster, $parse) {
 			return {
 				scope: true,
 				restrict: 'EAC',
@@ -673,6 +727,7 @@
 						gridster.loaded = false;
 
 						gridster.$element = $elem;
+						gridster.model = $parse(attrs.model)(scope);
 
 						scope.gridster = gridster;
 
@@ -697,6 +752,10 @@
 						});
 
 						function refresh(config) {
+							if (gridster.multiGridster && gridster.multiGridster.enabled) {
+								GridsterMaster.register(gridster);
+							}
+
 							gridster.setOptions(config);
 
 							if (!isVisible($elem[0])) {
@@ -1371,12 +1430,12 @@
 		};
 	}])
 
-	.factory('GridsterDraggable', ['$document', '$window', 'GridsterTouch',
-		function($document, $window, GridsterTouch) {
+	.factory('GridsterDraggable', ['$document', '$window', 'GridsterTouch', 'GridsterMaster', '$timeout',
+		function($document, $window, GridsterTouch, GridsterMaster, $timeout) {
 			function GridsterDraggable($el, scope, gridster, item, itemOptions) {
 
 				var elmX, elmY, elmW, elmH,
-
+					originalGridster = gridster,
 					mouseX = 0,
 					mouseY = 0,
 					lastMouseX = 0,
@@ -1481,19 +1540,72 @@
 				}
 
 				function dragStop(event) {
+					var isValidMove = true;
 					$el.removeClass('gridster-item-moving');
 					var row = Math.min(gridster.pixelsToRows(elmY), gridster.maxRows - 1);
+
+					if (gridster.multiGridster && gridster.multiGridster.enabled) {
+						var closestGridster = GridsterMaster.findClosestGridster($el);
+						if (closestGridster !== gridster) {
+							gridster.movingItem = null;
+							gridster.removeItem(item);
+							closestGridster.movingItem = item;
+							item.gridster = closestGridster;
+							gridster = closestGridster;
+						}
+						// We need to take the row position not of the item to his original gridster, but to his closest one
+						row = gridster.pixelsToRows(elmY +
+							originalGridster.$element[0].offsetTop - gridster.$element[0].offsetTop);
+					}
+
 					var col = Math.min(gridster.pixelsToColumns(elmX), gridster.columns - 1);
 					if (gridster.pushing !== false || gridster.getItems(row, col, item.sizeX, item.sizeY, item).length === 0) {
 						item.row = row;
 						item.col = col;
 					}
 					gridster.movingItem = null;
-					item.setPosition(item.row, item.col);
+
+					if (gridster.isValidMove && !gridster.isValidMove(event, $el, itemOptions,
+							item, gridster.model)) {
+						isValidMove = false;
+						item.gridster = originalGridster;
+						item.row = originalRow;
+						item.col = originalCol;
+					}
+
+					if (gridster.multiGridster && gridster.multiGridster.enabled && originalGridster !== gridster && isValidMove) {
+						gridster.removeItem(item);
+						if (gridster.multiGridster.hasOwnProperty('add')) {
+							// When removing the original, it will place the new on at the original place of the original.
+							// So we pass the position when it was 'released'.
+							var position = {
+								row: item.row,
+								col: item.col,
+								sizeX: item.sizeX,
+								sizeY: item.sizeY
+							};
+							$timeout(function() {
+								gridster.multiGridster.add(item.model, gridster.model, position);
+								gridster.moveOverlappingItems(item);
+							});
+						} else {
+							throw new Error('When using multi gridsters the function \'add\' must be defined.');
+						}
+						if (gridster.multiGridster.hasOwnProperty('remove')) {
+							gridster.multiGridster.remove(item.model, originalGridster.model);
+						} else {
+							item.gridster = originalGridster;
+							item.setPosition(originalRow, originalCol);
+						}
+					} else {
+						item.setPosition(item.row, item.col);
+						item.setSizeY(item.sizeY);
+						item.setSizeX(item.sizeX);
+					}
 
 					scope.$apply(function() {
 						if (gridster.draggable && gridster.draggable.stop) {
-							gridster.draggable.stop(event, $el, itemOptions, item);
+							gridster.draggable.stop(event, $el, itemOptions, item.model, gridster.model);
 						}
 					});
 				}
@@ -1598,20 +1710,25 @@
 
 					var dX = diffX,
 						dY = diffY;
-					if (elmX + dX < minLeft) {
-						diffX = minLeft - elmX;
-						mOffX = dX - diffX;
-					} else if (elmX + elmW + dX > maxLeft) {
-						diffX = maxLeft - elmX - elmW;
-						mOffX = dX - diffX;
-					}
 
-					if (elmY + dY < minTop) {
-						diffY = minTop - elmY;
-						mOffY = dY - diffY;
-					} else if (elmY + elmH + dY > maxTop) {
-						diffY = maxTop - elmY - elmH;
-						mOffY = dY - diffY;
+					// No need to limit the movement inside the box when you should
+					// be able to drag it to anywhere
+					if (!gridster.multiGridster && gridster.multiGridster.enabled) {
+						if (elmX + dX < minLeft) {
+							diffX = minLeft - elmX;
+							mOffX = dX - diffX;
+						} else if (elmX + elmW + dX > maxLeft) {
+							diffX = maxLeft - elmX - elmW;
+							mOffX = dX - diffX;
+						}
+
+						if (elmY + dY < minTop) {
+							diffY = minTop - elmY;
+							mOffY = dY - diffY;
+						} else if (elmY + elmH + dY > maxTop) {
+							diffY = maxTop - elmY - elmH;
+							mOffY = dY - diffY;
+						}
 					}
 					elmX += diffX;
 					elmY += diffY;
@@ -1712,7 +1829,7 @@
 					return (item.minSizeX ? item.minSizeX : 1) * gridster.curColWidth - gridster.margins[1];
 				};
 
-				var originalWidth, originalHeight;
+				var originalWidth, originalHeight, originalRow, originalCol;
 				var savedDraggable;
 
 				function resizeStart(e) {
@@ -1790,15 +1907,28 @@
 
 					gridster.movingItem = null;
 
-					item.setPosition(item.row, item.col);
-					item.setSizeY(item.sizeY);
-					item.setSizeX(item.sizeX);
+					if (gridster.isValidMove && !gridster.isValidMove(e, $el, itemOptions,
+							item)) {
+						item.row = originalRow;
+						item.col = originalCol;
+						item.sizeX = originalWidth;
+						item.sizeY = originalHeight;
 
-					scope.$apply(function() {
-						if (gridster.resizable && gridster.resizable.stop) {
-							gridster.resizable.stop(e, $el, itemOptions, item); // options is the item model
-						}
-					});
+						// Since we dont have to call setSize we do have to manually set the
+						// layout back again...
+						gridster.moveOverlappingItems(item);
+						gridster.layoutChanged();
+					} else {
+						item.setPosition(item.row, item.col);
+						item.setSizeY(item.sizeY);
+						item.setSizeX(item.sizeX);
+
+						scope.$apply(function() {
+							if (gridster.resizable && gridster.resizable.stop) {
+								gridster.resizable.stop(e, $el, itemOptions, item); // options is the item model
+							}
+						});
+					}
 				}
 
 				function mouseDown(e) {
@@ -1831,6 +1961,8 @@
 
 					originalWidth = item.sizeX;
 					originalHeight = item.sizeY;
+					originalRow = item.row;
+					originalCol = item.col;
 
 					resizeStart(e);
 
@@ -2045,7 +2177,7 @@
 
 					var gridster = controllers[0],
 						item = controllers[1];
-
+					item.model = $parse(attrs.model)(scope);
 					scope.gridster = gridster;
 
 					// bind the item's position properties
@@ -2230,6 +2362,57 @@
 			restrict: 'A',
 			link: function(scope, $element) {
 				$element.addClass('gridster-no-drag');
+			}
+		};
+	})
+
+	.factory('RectangleHelper', function() {
+		return {
+			/**
+			 * @ngdoc service
+			 * @name uasApp.rectangleHelp:hasInner
+			 * @description
+			 * Return true iff the innerRect is inside the outerRect.
+			 */
+			hasInner: function(outerRect, innerRect) {
+				var outTopLeft = {
+					x: outerRect.left,
+					y: outerRect.top
+				};
+				var outBottomRight = {
+					x: outerRect.right,
+					y: outerRect.bottom
+				};
+				var innerTopLeft = {
+					x: innerRect.left,
+					y: innerRect.top
+				};
+				var innerBottomRight = {
+					x: innerRect.right,
+					y: innerRect.bottom
+				};
+				return ((outTopLeft.x <= innerTopLeft.x && outBottomRight.x >= innerBottomRight.x) &&
+					(outTopLeft.y <= innerTopLeft.y && outBottomRight.y >= innerBottomRight.y));
+			},
+			/**
+			 * @ngdoc service
+			 * @name uasApp.rectangleHelp:hasInner
+			 * @description
+			 * Return 0 if yRect is in xRect otherwise the distance from the xRect to the yRect
+			 */
+			distance: function(thisRect, otherRect) {
+				if (this.hasInner(thisRect, otherRect)) {
+					return 0;
+				}
+				var thisCoord = {
+					x: (thisRect.left + thisRect.right) / 2,
+					y: (thisRect.top + thisRect.bottom) / 2
+				};
+				var otherCoord = {
+					x: (otherRect.left + otherRect.right) / 2,
+					y: (otherRect.top + otherRect.bottom) / 2
+				};
+				return Math.sqrt(Math.pow(thisCoord.x - otherCoord.x, 2) + Math.pow(thisCoord.y - otherCoord.y, 2));
 			}
 		};
 	})

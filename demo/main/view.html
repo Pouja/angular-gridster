@@ -85,4 +85,36 @@
 			<li gridster-item></li>
         </ul>
     </div>
+
+    <h2>Valid move</h2>
+    <p>Testing the validity of a valid move.</p>
+    <p>Try to move the block the first column or try to resize a block to a width of 5</p>
+    <div gridster="validMoveGridster">
+    	<ul>
+            <li gridster-item="item" ng-repeat="item in standardItems"></li>
+        </ul>
+    </div>
+
+    <h2>Multi gridster</h2>
+	<p>Group 1</p>
+	<div class="border">
+		<div gridster="multiGridsterOpts" model="multiItems1">
+			 <ul>
+				<li gridster-item="item" ng-repeat="item in multiItems1.items" model="item">
+					<p>id: {{item.id}}</p>
+				</li>
+			</ul>
+		</div>
+	</div>
+
+	<p>Group 2</p>
+	<div class="border">
+		<div gridster="multiGridsterOpts" model="multiItems2">
+			<ul>
+				<li gridster-item="item" ng-repeat="item in multiItems2.items" model="item">
+					<p>id: {{item.id}}</p>
+				</li>
+			</ul>
+		</div>
+
 </div>
